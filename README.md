@@ -28,3 +28,7 @@ $ git push -u
 ### コード生成
 
 master に push されるたびに `generated/<LANGUAGE>` ブランチにクライアントのコードが生成される 
+
+### ToDo
+
+- master 以外でも コード生成ができるようにする。 (試作を試せない)
