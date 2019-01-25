@@ -38,6 +38,9 @@ jobs:
       - run:
           name: Generate gRPC for typescript
           command: docker-compose run --rm typescript
+      - run:
+          name: Generate gRPC for web
+          command: docker-compose run --rm web
       - persist_to_workspace:
           root: .
           paths:
@@ -123,28 +126,47 @@ jobs:
             if [ $result -eq 0 ]; then
               git -C ../typescript-src push upstream generated/typescript 2> /dev/null
             fi
+      - run:
+          name: git commit web-src
+          command: |
+            if [ `git branch -r --list origin/generated/web | wc -l` -eq 1 ]; then
+              echo "checkout generated/web"
+              git fetch origin
+              git worktree add -b generated/web ../web-src origin/generated/web
+              git -C ../web-src rm `git -C ../web-src ls-files`
+            else
+              echo "create generated/web"
+              git worktree add --detach ../web-src
+              git -C ../web-src checkout --orphan generated/web
+              git -C ../web-src rm --cached -r .
+              git -C ../web-src clean -d -f
+            fi
+            cp -a pb-web/* ../web-src/
+            git -C ../web-src add -A
+            git -C ../web-src status
+            result=0
+            git -C ../web-src commit -m "AUTO GENERATED [ci skip]" || result=$?
+            if [ $result -eq 0 ]; then
+              git -C ../web-src push upstream generated/web 2> /dev/null
+            fi
 
 workflows:
   version: 2
   build_and_push:
     jobs:
-      - lint:
-          filters:
-            branches:
-              only:
-                - master
-      - build:
-          requires:
-            - lint
-          filters:
-            branches:
-              only:
-                - master
-      - push:
-          requires:
-            - lint
-            - build
-          filters:
-            branches:
-              only:
-                - master
+    - lint
+    - build:
+        requires:
+          - lint
+        filters:
+          branches:
+            only:
+              - master
+    - push:
+        requires:
+          - lint
+          - build
+        filters:
+          branches:
+            only:
+              - master

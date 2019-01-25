@@ -23,3 +23,8 @@ services:
         command: 'sh -c
         "cd grpc-gen
         && bash protoc.sh"'
+    web:
+        image: namely/protoc-all:1.16_0
+        volumes:
+        - .:/defs
+        command: "-d ./protos -o ./pb-web --with-docs markdown,readme.md -l web"
